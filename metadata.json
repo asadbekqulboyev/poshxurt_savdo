@@ -1,0 +1,7 @@
+{
+  "name": "Poshxurt Internet Do'koni",
+  "description": "Qishloq aholisi uchun qulay savdo platformasi. Mahsulotlarni soting va sotib oling.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

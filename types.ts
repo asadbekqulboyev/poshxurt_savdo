@@ -1,0 +1,48 @@
+export interface User {
+  id: string;
+  name: string;
+  phone: string;
+  isPremium: boolean;
+  premiumExpiry?: number; // timestamp
+  referralCount: number;
+  referralLink: string;
+  avatar?: string;
+}
+
+export enum ProductStatus {
+  ACTIVE = 'active',
+  SOLD = 'sold',
+}
+
+export interface Product {
+  id: string;
+  sellerId: string;
+  sellerName: string;
+  sellerPhone: string;
+  title: string;
+  price: number;
+  description: string;
+  images: string[]; // Changed from single image string to array
+  category: string;
+  isTop: boolean; // "Topda turish" feature
+  createdAt: number;
+  status: ProductStatus;
+  location: string;
+}
+
+export interface PassengerRequest {
+  id: string;
+  from: string;
+  to: string;
+  price: string;
+  phone: string;
+  createdAt: number;
+}
+
+export type ViewState = 'landing' | 'market' | 'create' | 'profile' | 'product-detail' | 'taxi-choice' | 'passenger-request' | 'driver-feed';
+
+export interface Category {
+  id: string;
+  name: string;
+  icon: string;
+}
