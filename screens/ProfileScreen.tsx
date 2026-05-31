@@ -100,7 +100,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, view, setVie
           <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg text-slate-900">Premium Holati</h3>
-              {currentUser.isPremium ? <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold text-[10px] border border-blue-200 tracking-wide">✅ YOQILGAN</span> : <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-bold text-[10px] tracking-wide">❌ O'CHIQ</span>}
+              {currentUser.isPremium ? <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold text-xs border border-blue-200 tracking-wide">✅ YOQILGAN</span> : <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-bold text-xs tracking-wide">❌ O'CHIQ</span>}
             </div>
             {currentUser.isAdmin ? (
               <div className="bg-amber-50 rounded-xl p-4 border border-amber-100 text-center">
@@ -116,7 +116,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, view, setVie
                   <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
                   <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min((currentUser.referralCount / 3) * 100, 100)}%` }}></div>
                   </div>
-                  <p className="text-[10px] text-slate-500 mt-2 font-medium">Yana {Math.max(0, 3 - currentUser.referralCount)} ta do'stingizni taklif qiling va <b>1 hafta tekin Premium</b> oling!</p>
+                  <p className="text-xs text-slate-500 mt-2 font-medium">Yana {Math.max(0, 3 - currentUser.referralCount)} ta do'stingizni taklif qiling va <b>1 hafta tekin Premium</b> oling!</p>
               </div>
             )}
             <button onClick={handleShareReferral} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold text-base hover:bg-black shadow-lg shadow-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 mt-4"><Share2 size={20} /> DO'STLARGA YUBORISH</button>

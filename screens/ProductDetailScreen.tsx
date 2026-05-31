@@ -35,7 +35,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ produc
         <div className="flex-1 p-5 bg-white rounded-t-[2rem] -mt-6 relative z-10 shadow-[0_-5px_30px_rgba(0,0,0,0.1)] md:mt-0 md:rounded-3xl md:shadow-xl md:p-8 md:flex md:flex-col">
           <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-6 md:hidden"></div>
           <div className="mb-3">
-            <span className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg font-bold uppercase text-[10px] md:text-xs mb-3 inline-block tracking-wide">
+            <span className="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg font-bold uppercase text-xs mb-3 inline-block tracking-wide">
               {CATEGORIES.find(c => c.id === product.category)?.icon} {CATEGORIES.find(c => c.id === product.category)?.name}
             </span>
             <h1 className="text-2xl md:text-3xl font-black text-slate-900 leading-snug">{product.title}</h1>
@@ -44,7 +44,7 @@ export const ProductDetailScreen: React.FC<ProductDetailScreenProps> = ({ produc
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-6 flex items-center shadow-sm">
             <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-200 to-sky-300 rounded-xl flex items-center justify-center text-blue-900 font-bold text-xl md:text-2xl mr-4 shadow-inner">{product.sellerName.charAt(0)}</div>
             <div>
-                <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-wider mb-0.5">{isTaxi ? "Haydovchi" : "Sotuvchi"}</p>
+                <p className="text-xs md:text-sm font-bold text-slate-400 uppercase tracking-wider mb-0.5">{isTaxi ? "Haydovchi" : "Sotuvchi"}</p>
                 <p className="font-bold text-lg md:text-xl text-slate-900 leading-tight">{product.sellerName}</p>
                 <p className="text-slate-500 text-xs md:text-sm mt-0.5 flex items-center"><span className="mr-1">📍</span> {product.location}</p>
             </div>
