@@ -38,66 +38,54 @@ export default function App() {
     }
   }, []);
 
-  // --- TELEGRAM ID ORQALI AVTOMATIK KIRISH ---
+  // --- TELEGRAM ID ORQALI AVTOMATIK KIRISH (cache-first) ---
   const [debugInfo, setDebugInfo] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
 
-    const tryFindUser = async (): Promise<boolean> => {
-      const tg = window.Telegram?.WebApp;
-      const tgUser = tg?.initDataUnsafe?.user;
+    const tg = window.Telegram?.WebApp;
+    try { tg?.ready(); } catch (e) {}
 
-      if (!tgUser?.id) return false;
+    // 1) DARHOL: oldin kirgan bo'lsa, cache'dan tezkor kiritamiz (kutmasdan)
+    const cached = authService.getCurrentUser();
+    if (cached) {
+      setUser(cached);
+      setAuthStatus('authed');
+    }
 
-      const found = await authService.getUserByTelegramId(tgUser.id);
-      if (cancelled) return true;
-
-      if (found) {
-        setUser(found);
-        setAuthStatus('authed');
-        return true;
-      }
-      // Telegram ID keldi, lekin bazada yo'q
-      setDebugInfo(`Telegram ID: ${tgUser.id} — bazada topilmadi`);
-      return false;
-    };
-
-    const init = async () => {
-      // Telegram WebApp SDK ba'zan kech tayyor bo'ladi — bir necha marta urinamiz
-      for (let attempt = 0; attempt < 5; attempt++) {
-        const tg = window.Telegram?.WebApp;
-        const tgUser = tg?.initDataUnsafe?.user;
-
+    // 2) FONDA: Telegram'dan yangi ma'lumotni olib, cache'ni yangilaymiz
+    const resolveTelegram = async () => {
+      // initData ba'zan kech keladi — 12 marta (~6 soniya) urinib ko'ramiz
+      for (let attempt = 0; attempt < 12; attempt++) {
+        if (cancelled) return;
+        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
         if (tgUser?.id) {
-          const ok = await tryFindUser();
-          if (ok) return;
-          // ID bor, lekin bazada yo'q — qayta urinish foyda bermaydi
-          setAuthStatus('no-telegram');
+          const found = await authService.getUserByTelegramId(tgUser.id);
+          if (cancelled) return;
+          if (found) {
+            setUser(found);
+            setAuthStatus('authed');
+          } else if (!cached) {
+            setDebugInfo(`Telegram ID: ${tgUser.id} — bazada topilmadi. Botda /start bosing.`);
+            setAuthStatus('no-telegram');
+          }
           return;
         }
-        // Hali user yo'q — 400ms kutib qayta urinamiz
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 500));
       }
 
+      // Telegram ma'lumoti umuman kelmadi
       if (cancelled) return;
-
-      // 5 urinishdan keyin ham Telegram user yo'q — brauzer yoki cache
-      const cached = authService.getCurrentUser();
-      if (cached) {
-        setUser(cached);
-        setAuthStatus('authed');
-      } else {
-        const tg = window.Telegram?.WebApp;
-        setDebugInfo(
-          `Telegram aniqlanmadi. initData uzunligi: ${tg?.initData?.length ?? 'yo`q'}, ` +
-          `platforma: ${tg?.platform ?? 'yo`q'}`
-        );
+      if (!cached) {
+        const t = window.Telegram?.WebApp;
+        setDebugInfo(`initData uzunligi: ${t?.initData?.length ?? 0}, platforma: ${t?.platform ?? 'yoq'}`);
         setAuthStatus('no-telegram');
       }
+      // cached bo'lsa — allaqachon ichkaridamiz, hech narsa qilmaymiz
     };
 
-    init();
+    resolveTelegram();
     return () => { cancelled = true; };
   }, []);
 
