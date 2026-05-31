@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TruckIcon, ChevronLeft, Navigation, ChevronRight, Megaphone, MapPin, ArrowRight, Bell, Clock, Phone } from 'lucide-react';
+import { TruckIcon, ChevronLeft, Navigation, ChevronRight, Megaphone, Bell, Clock, Phone } from 'lucide-react';
 import { ViewState, PassengerRequest, User } from '../types';
 import { BottomNav } from '../components/BottomNav';
 import { productService } from '../services/supabaseService';
@@ -81,56 +81,51 @@ export const PassengerRequestScreen = ({ view, setView, user, showToast, onSellC
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col pb-20 md:pb-0 md:justify-center">
-            <div className="w-full max-w-lg mx-auto bg-white md:rounded-3xl md:shadow-2xl md:overflow-hidden md:border border-slate-100 h-full md:h-auto flex flex-col">
-                <div className="bg-white px-5 py-4 flex items-center shadow-sm sticky top-0 z-20 border-b border-slate-50">
+        <div className="min-h-screen bg-slate-50 flex flex-col pb-24">
+            <div className="w-full max-w-lg mx-auto flex flex-col">
+                <div className="bg-white px-4 py-4 flex items-center shadow-sm sticky top-0 z-20 border-b border-slate-100">
                     <button onClick={() => setView('taxi-choice')} className="mr-3 bg-slate-100 p-2 rounded-xl active:bg-slate-200 transition-colors">
-                        <ChevronLeft size={24} className="text-black" />
+                        <ChevronLeft size={24} className="text-slate-800" />
                     </button>
-                    <h1 className="font-bold text-xl text-black">Taxi chaqirish</h1>
+                    <h1 className="font-black text-xl text-slate-900">Taksi chaqirish</h1>
                 </div>
-                <div className="p-6 flex-1 overflow-y-auto safe-bottom">
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-6 flex items-start">
-                        <Megaphone className="text-yellow-600 mr-3 flex-shrink-0 mt-1" size={20} />
-                        <p className="text-yellow-800 text-sm font-medium leading-relaxed">Ushbu so'rov barcha taxi haydovchilariga <b>bildirishnoma</b> sifatida yuboriladi.</p>
+                <div className="p-4">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-5 flex items-start">
+                        <Megaphone className="text-yellow-600 mr-3 flex-shrink-0 mt-0.5" size={20} />
+                        <p className="text-yellow-800 text-sm font-medium leading-relaxed">So'rovingiz barcha haydovchilarga ko'rinadi. Ular sizga qo'ng'iroq qiladi.</p>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Qayerdan</label>
-                                <div className="relative group">
-                                    <div className="absolute left-4 top-3.5 text-blue-500 bg-blue-50 p-1 rounded-lg"><MapPin size={18} /></div>
-                                    <input type="text" value={req.from} onChange={e => setReq({...req, from: e.target.value})} placeholder="Masalan: Poshxurt Markaz" className="w-full pl-14 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none font-bold text-slate-800 transition-all shadow-sm" required />
-                                </div>
-                            </div>
-                            <div className="flex justify-center -my-3 relative z-10">
-                                <div className="bg-white p-1.5 rounded-full border border-slate-100 shadow-sm"><ArrowRight className="text-slate-300 rotate-90" size={16} /></div>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Qayerga</label>
-                                <div className="relative group">
-                                    <div className="absolute left-4 top-3.5 text-green-500 bg-green-50 p-1 rounded-lg"><Navigation size={18} /></div>
-                                    <input type="text" value={req.to} onChange={e => setReq({...req, to: e.target.value})} placeholder="Masalan: Termiz" className="w-full pl-14 pr-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:border-green-500 focus:ring-4 focus:ring-blue-50 outline-none font-bold text-slate-800 transition-all shadow-sm" required />
-                                </div>
+                        {/* Qayerdan */}
+                        <div>
+                            <label className="block text-base font-bold text-slate-900 mb-2">📍 Qayerdan</label>
+                            <input type="text" value={req.from} onChange={e => setReq({...req, from: e.target.value})} placeholder="Masalan: Poshxurt markaz" className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg transition-all" required />
+                        </div>
+                        {/* Qayerga */}
+                        <div>
+                            <label className="block text-base font-bold text-slate-900 mb-2">🎯 Qayerga</label>
+                            <input type="text" value={req.to} onChange={e => setReq({...req, to: e.target.value})} placeholder="Masalan: Termiz" className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg transition-all" required />
+                        </div>
+                        {/* Narx (ixtiyoriy) */}
+                        <div>
+                            <label className="block text-base font-bold text-slate-900 mb-2">💰 Taklif narx <span className="text-slate-400 text-sm font-medium">(ixtiyoriy)</span></label>
+                            <div className="relative">
+                                <input type="number" inputMode="numeric" value={req.price} onChange={e => setReq({...req, price: e.target.value})} placeholder="Kelishamiz" className="w-full px-4 py-4 pr-16 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg font-bold transition-all" />
+                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">so'm</span>
                             </div>
                         </div>
-                        <div className="bg-slate-50 p-5 rounded-3xl border border-slate-100 space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Taklif narx (So'm) - <span className="text-slate-400 font-normal">Ixtiyoriy</span></label>
-                                <input type="number" value={req.price} onChange={e => setReq({...req, price: e.target.value})} placeholder="Kelishilgan" className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none font-bold text-slate-800 transition-all shadow-sm" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">Telefon raqam</label>
-                                <input type="tel" value={req.phone} onChange={e => setReq({...req, phone: e.target.value})} className="w-full px-4 py-3.5 bg-white border border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none font-bold text-slate-800 transition-all shadow-sm" required />
-                            </div>
+                        {/* Telefon avtomatik */}
+                        <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3 flex items-center gap-2">
+                            <span className="text-lg">📞</span>
+                            <p className="text-sm text-green-800 font-medium">Raqamingiz: <b>{req.phone}</b></p>
                         </div>
-                        <button type="submit" disabled={isLoading} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-lg shadow-xl shadow-slate-300 hover:bg-black hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center">
-                            {isLoading ? 'Yuborilmoqda...' : 'HAYDOVCHILARGA YUBORISH'}
+
+                        <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-blue-200 active:scale-95 transition-all disabled:opacity-60">
+                            {isLoading ? 'Yuborilmoqda...' : 'TAKSI CHAQIRISH'}
                         </button>
                     </form>
                 </div>
             </div>
-            <div className="hidden md:block"><BottomNav view={view} setView={setView} onSellClick={onSellClick} /></div>
+            <BottomNav view={view} setView={setView} onSellClick={onSellClick} />
         </div>
     );
 };
@@ -144,52 +139,53 @@ export const DriverFeedScreen = ({ view, setView, onSellClick, onTaxiAdCreate }:
     }, []);
 
     return (
-        <div className="min-h-screen bg-slate-100 flex flex-col pb-20 md:pb-0">
-            <div className="max-w-2xl mx-auto w-full md:mt-6 md:mb-20">
-                <div className="bg-yellow-400 px-4 py-4 flex items-center justify-between shadow-md sticky top-0 z-20 md:rounded-2xl md:mx-4">
+        <div className="min-h-screen bg-slate-100 flex flex-col pb-24">
+            <div className="max-w-2xl mx-auto w-full">
+                <div className="bg-yellow-400 px-4 py-4 flex items-center justify-between shadow-md sticky top-0 z-20">
                     <div className="flex items-center">
-                        <button onClick={() => setView('taxi-choice')} className="mr-3 bg-white/20 p-2 rounded-xl active:bg-white/30 text-black hover:bg-white/40 transition-colors"><ChevronLeft size={24} /></button>
+                        <button onClick={() => setView('taxi-choice')} className="mr-3 bg-black/10 p-2 rounded-xl active:bg-black/20 text-black transition-colors"><ChevronLeft size={24} /></button>
                         <h1 className="font-black text-xl text-black">Buyurtmalar</h1>
                     </div>
-                    <button onClick={onTaxiAdCreate} className="bg-black text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg hover:bg-slate-800 active:scale-95 transition-all">E'lon berish</button>
+                    <button onClick={onTaxiAdCreate} className="bg-black text-white px-4 py-2.5 rounded-xl text-sm font-bold active:scale-95 transition-all">+ E'lon</button>
                 </div>
-                <div className="p-4 flex-1 overflow-y-auto safe-bottom space-y-4">
+                <div className="p-4 space-y-4">
                     {requests.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-slate-400 bg-white rounded-3xl border border-slate-200 shadow-sm mx-auto p-10">
+                        <div className="flex flex-col items-center justify-center h-64 text-slate-400 bg-white rounded-3xl border border-slate-200 shadow-sm p-10">
                             <div className="bg-slate-50 p-4 rounded-full mb-4"><Bell size={40} className="text-slate-300" /></div>
-                            <p className="font-bold text-lg">Hozircha buyurtmalar yo'q</p>
+                            <p className="font-bold text-lg">Hozircha buyurtma yo'q</p>
+                            <p className="text-sm text-slate-400 mt-1">Yangi so'rovlar shu yerda ko'rinadi</p>
                         </div>
                     ) : (
                         requests.map(req => (
-                            <div key={req.id} className="bg-white rounded-3xl p-5 shadow-sm hover:shadow-md transition-shadow border border-slate-200 relative overflow-hidden animate-in slide-in-from-bottom-2 duration-300 group">
-                                <div className="flex items-center justify-between mb-4 border-b border-slate-50 pb-3">
-                                    <div className="flex items-center text-red-500 bg-red-50 px-2.5 py-1 rounded-lg"><Bell size={14} className="fill-red-500 mr-2 animate-pulse" /><span className="text-[10px] font-bold uppercase tracking-wide">Yangi Buyurtma</span></div>
-                                    <div className="flex items-center text-slate-400 text-xs font-medium bg-slate-50 px-2 py-1 rounded-lg"><Clock size={12} className="mr-1" />{new Date(req.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                            <div key={req.id} className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200">
+                                <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                                    <div className="flex items-center text-red-500 bg-red-50 px-3 py-1.5 rounded-lg"><Bell size={14} className="fill-red-500 mr-1.5" /><span className="text-xs font-bold">Yangi</span></div>
+                                    <div className="flex items-center text-slate-400 text-sm font-medium"><Clock size={14} className="mr-1" />{new Date(req.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                                 </div>
-                                <div className="grid grid-cols-[auto_1fr] gap-4 mb-5 px-1">
+                                <div className="grid grid-cols-[auto_1fr] gap-4 mb-4">
                                     <div className="flex flex-col items-center justify-center space-y-1 pt-1.5">
                                         <div className="w-3 h-3 rounded-full bg-blue-500 ring-4 ring-blue-50"></div>
-                                        <div className="w-0.5 h-10 bg-slate-200 border-l-2 border-dashed border-slate-300"></div>
+                                        <div className="w-0.5 h-8 bg-slate-200"></div>
                                         <div className="w-3 h-3 rounded-full bg-green-500 ring-4 ring-green-50"></div>
                                     </div>
-                                    <div className="space-y-4">
-                                        <div><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Qayerdan</p><p className="text-slate-900 font-bold text-lg leading-tight">{req.from}</p></div>
-                                        <div><p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Qayerga</p><p className="text-slate-900 font-bold text-lg leading-tight">{req.to}</p></div>
+                                    <div className="space-y-3">
+                                        <div><p className="text-xs text-slate-400 font-bold mb-0.5">Qayerdan</p><p className="text-slate-900 font-bold text-lg leading-tight">{req.from}</p></div>
+                                        <div><p className="text-xs text-slate-400 font-bold mb-0.5">Qayerga</p><p className="text-slate-900 font-bold text-lg leading-tight">{req.to}</p></div>
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl mb-4 border border-slate-100">
-                                    <span className="text-slate-500 text-xs font-bold">Narx taklifi:</span>
+                                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl mb-3 border border-slate-100">
+                                    <span className="text-slate-500 text-sm font-bold">Narx:</span>
                                     <span className="text-blue-600 font-black text-xl">{req.price ? new Intl.NumberFormat('uz-UZ').format(Number(req.price)) + " so'm" : "Kelishilgan"}</span>
                                 </div>
-                                <a href={`tel:${req.phone.replace(/\s/g, '')}`} className="w-full bg-green-500 text-white py-4 rounded-2xl font-bold flex items-center justify-center hover:bg-green-600 active:scale-[0.98] transition-all shadow-lg shadow-green-200 group-hover:translate-y-[-2px]">
-                                    <Phone size={20} className="mr-2 fill-white" />Qabul Qilish
+                                <a href={`tel:${req.phone.replace(/\s/g, '')}`} className="w-full bg-green-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center active:scale-[0.98] transition-all shadow-lg shadow-green-200">
+                                    <Phone size={22} className="mr-2 fill-white" />Qo'ng'iroq qilish
                                 </a>
                             </div>
                         ))
                     )}
                 </div>
             </div>
-            <div className="hidden md:block"><BottomNav view={view} setView={setView} onSellClick={onSellClick} /></div>
+            <BottomNav view={view} setView={setView} onSellClick={onSellClick} />
         </div>
     );
 };
