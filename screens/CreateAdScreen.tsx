@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { ChevronLeft, X, ImageIcon, Camera } from 'lucide-react';
+import { ChevronLeft, X, Camera, Plus, ChevronDown } from 'lucide-react';
 import { ViewState, User } from '../types';
 import { BottomNav } from '../components/BottomNav';
 import { CATEGORIES } from '../constants';
 import { productService } from '../services/supabaseService';
-
 
 interface CreateAdScreenProps {
   view: ViewState;
@@ -17,14 +16,17 @@ interface CreateAdScreenProps {
 
 export const CreateAdScreen: React.FC<CreateAdScreenProps> = ({ view, setView, user, initialCategory = 'others', showToast, onSellClick }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [showExtra, setShowExtra] = useState(false);
   const [newAd, setNewAd] = useState({
     title: '',
     price: '',
     description: '',
     category: initialCategory,
     location: '',
-    images: [] as string[]
+    images: [] as string[],
   });
+
+  const isTaxi = newAd.category === 'taxi';
 
   const resizeImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -36,7 +38,7 @@ export const CreateAdScreen: React.FC<CreateAdScreenProps> = ({ view, setView, u
           let width = img.width;
           let height = img.height;
           const MAX_SIZE = 800;
-          if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } } 
+          if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } }
           else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
           canvas.width = width;
           canvas.height = height;
@@ -55,17 +57,25 @@ export const CreateAdScreen: React.FC<CreateAdScreenProps> = ({ view, setView, u
       const files = Array.from(e.target.files);
       setIsLoading(true);
       try {
-        const base64Images = await Promise.all(files.map(file => resizeImage(file as File)));
-        setNewAd(prev => ({ ...prev, images: [...prev.images, ...base64Images] }));
-      } catch (error) { showToast("Rasmni yuklashda xatolik", 'error'); } 
-      finally { setIsLoading(false); }
+        const base64Images = await Promise.all(files.map((file) => resizeImage(file as File)));
+        setNewAd((prev) => ({ ...prev, images: [...prev.images, ...base64Images] }));
+      } catch (error) {
+        showToast("Rasmni yuklashda xatolik", 'error');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const isTaxi = newAd.category === 'taxi';
-    if (!isTaxi && newAd.images.length === 0) { showToast("Iltimos, kamida bitta rasm yuklang!", 'error'); return; }
+    if (!isTaxi && newAd.images.length === 0) {
+      showToast("Iltimos, mahsulot rasmini qo'shing", 'error');
+      return;
+    }
+    if (!newAd.title.trim()) { showToast("Nima sotayotganingizni yozing", 'error'); return; }
+    if (!newAd.price) { showToast("Narxini yozing", 'error'); return; }
+
     const finalImages = (isTaxi && newAd.images.length === 0) ? ['default-taxi'] : newAd.images;
 
     setIsLoading(true);
@@ -75,99 +85,159 @@ export const CreateAdScreen: React.FC<CreateAdScreenProps> = ({ view, setView, u
         price: Number(newAd.price),
         description: newAd.description,
         category: newAd.category,
-        location: newAd.location,
+        location: newAd.location || 'Poshxurt',
         images: finalImages,
-        isTop: false
+        isTop: false,
       }, user);
       setView('market');
-      showToast("E'lon muvaffaqiyatli joylandi!", 'success');
-    } finally { setIsLoading(false); }
+      showToast("E'lon joylandi! ✅", 'success');
+    } catch (err) {
+      showToast("Xatolik yuz berdi, qayta urinib ko'ring", 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:justify-center md:pb-0 pb-20">
-      <div className="w-full max-w-lg mx-auto bg-white md:rounded-3xl md:shadow-2xl md:overflow-hidden md:border border-slate-100 h-full md:h-auto flex flex-col md:max-h-[85vh]">
-        <div className="bg-white px-5 py-4 flex items-center shadow-sm sticky top-0 z-20 border-b border-slate-50 flex-shrink-0">
-          <button onClick={() => setView(newAd.category === 'taxi' ? 'driver-feed' : 'market')} className="mr-3 bg-slate-100 p-2 rounded-xl active:bg-slate-200 transition-colors">
-            <ChevronLeft size={24} className="text-black" />
-          </button>
-          <h1 className="font-bold text-xl text-black">{newAd.category === 'taxi' ? 'Taxi Xizmati' : 'Narsa sotish'}</h1>
-        </div>
-        <div className="p-6 flex-1 overflow-y-auto safe-bottom">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="text-sm font-bold text-slate-900 mb-3 ml-1 flex justify-between items-center">
-                {newAd.category === 'taxi' ? 'Mashina Rasmi (Ixtiyoriy)' : 'Rasmlar'}
-                <span className="text-slate-400 text-xs font-normal">{newAd.images.length} ta yuklandi</span>
-              </label>
-              {newAd.images.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar mb-2">
-                  {newAd.images.map((img, idx) => (
-                    <div key={idx} className="relative flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border border-slate-200 group">
-                      <img src={img} className="w-full h-full object-cover" alt={`preview ${idx}`} />
-                      <button type="button" onClick={() => setNewAd(prev => ({...prev, images: prev.images.filter((_, i) => i !== idx)}))} className="absolute top-1 right-1 bg-red-500/80 hover:bg-red-500 text-white rounded-full p-1.5 shadow-md active:scale-90 transition-all backdrop-blur-sm"><X size={12} strokeWidth={3} /></button>
-                    </div>
-                  ))}
+    <div className="min-h-screen bg-slate-50 flex flex-col pb-24">
+      {/* Sarlavha */}
+      <div className="bg-white px-4 py-4 flex items-center shadow-sm sticky top-0 z-20 border-b border-slate-100">
+        <button onClick={() => setView(isTaxi ? 'driver-feed' : 'market')} className="mr-3 bg-slate-100 p-2 rounded-xl active:bg-slate-200 transition-colors">
+          <ChevronLeft size={24} className="text-slate-800" />
+        </button>
+        <h1 className="font-black text-xl text-slate-900">{isTaxi ? 'Taksi e\'loni' : 'Sotish'}</h1>
+      </div>
+
+      <div className="p-4 flex-1 max-w-lg mx-auto w-full">
+        <form onSubmit={handleSubmit} className="space-y-5">
+
+          {/* 1. RASM — katta, oson */}
+          <div>
+            <label className="block text-base font-bold text-slate-900 mb-2">
+              📷 Rasm {isTaxi && <span className="text-slate-400 text-sm font-medium">(ixtiyoriy)</span>}
+            </label>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar">
+              {/* Yuklangan rasmlar */}
+              {newAd.images.map((img, idx) => (
+                <div key={idx} className="relative flex-shrink-0 w-24 h-24 rounded-2xl overflow-hidden border border-slate-200">
+                  <img src={img} className="w-full h-full object-cover" alt={`rasm ${idx + 1}`} />
+                  <button type="button" onClick={() => setNewAd((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 shadow active:scale-90">
+                    <X size={13} strokeWidth={3} />
+                  </button>
                 </div>
-              )}
-              <div className="grid grid-cols-2 gap-3">
-                <label className="relative flex flex-col items-center justify-center h-32 bg-blue-50 rounded-2xl border-2 border-dashed border-blue-200 hover:bg-blue-100 active:bg-blue-100 cursor-pointer transition-colors group">
-                    <div className="bg-white p-3 rounded-full mb-2 shadow-sm group-hover:scale-110 transition-transform"><ImageIcon size={24} className="text-blue-600" /></div>
-                    <span className="text-xs font-bold text-blue-700">Galereya</span>
-                    <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
-                </label>
-                <label className="relative flex flex-col items-center justify-center h-32 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 hover:bg-slate-100 active:bg-slate-100 cursor-pointer transition-colors group">
-                    <div className="bg-white p-3 rounded-full mb-2 shadow-sm group-hover:scale-110 transition-transform"><Camera size={24} className="text-slate-600" /></div>
-                    <span className="text-xs font-bold text-slate-700">Kamera</span>
-                    <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleImageSelect} />
-                </label>
-              </div>
+              ))}
+              {/* Qo'shish tugmasi */}
+              <label className="flex-shrink-0 w-24 h-24 flex flex-col items-center justify-center bg-blue-50 rounded-2xl border-2 border-dashed border-blue-300 active:bg-blue-100 cursor-pointer">
+                <Camera size={26} className="text-blue-600 mb-1" />
+                <span className="text-xs font-bold text-blue-700">Rasm qo'shish</span>
+                <input type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
+              </label>
             </div>
-            <div className="space-y-5">
-              {newAd.category !== 'taxi' && (
+          </div>
+
+          {/* 2. NIMA SOTYAPSIZ */}
+          <div>
+            <label className="block text-base font-bold text-slate-900 mb-2">
+              {isTaxi ? '🚖 Yo\'nalish' : '✍️ Nima sotyapsiz?'}
+            </label>
+            {isTaxi && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {['Poshxurt → Termiz', 'Poshxurt → Sherobod', 'Qishloq ichida'].map((tag) => (
+                  <button key={tag} type="button" onClick={() => setNewAd({ ...newAd, title: tag })} className="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-2 rounded-xl active:bg-blue-100">{tag}</button>
+                ))}
+              </div>
+            )}
+            <input
+              type="text"
+              value={newAd.title}
+              onChange={(e) => setNewAd({ ...newAd, title: e.target.value })}
+              placeholder={isTaxi ? "Masalan: Poshxurt - Termiz" : "Masalan: Sigir sotiladi"}
+              className="w-full px-4 py-4 rounded-2xl bg-white border-2 border-slate-200 text-lg focus:border-blue-500 outline-none transition-all"
+            />
+          </div>
+
+          {/* 3. NARX */}
+          <div>
+            <label className="block text-base font-bold text-slate-900 mb-2">
+              💰 Narxi {isTaxi && <span className="text-slate-400 text-sm font-medium">(1 kishi)</span>}
+            </label>
+            <div className="relative">
+              <input
+                type="number"
+                inputMode="numeric"
+                value={newAd.price}
+                onChange={(e) => setNewAd({ ...newAd, price: e.target.value })}
+                placeholder="0"
+                className="w-full px-4 py-4 pr-16 rounded-2xl bg-white border-2 border-slate-200 text-lg font-bold focus:border-blue-500 outline-none transition-all"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">so'm</span>
+            </div>
+          </div>
+
+          {/* Telefon avtomatik — eslatma */}
+          <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3 flex items-center gap-2">
+            <span className="text-lg">📞</span>
+            <p className="text-sm text-green-800 font-medium">
+              Telefon raqamingiz avtomatik qo'shiladi: <b>{user.phone}</b>
+            </p>
+          </div>
+
+          {/* QO'SHIMCHA (ixtiyoriy) — yopiq turadi */}
+          <button
+            type="button"
+            onClick={() => setShowExtra((s) => !s)}
+            className="w-full flex items-center justify-between bg-white border border-slate-200 rounded-2xl px-4 py-3.5 active:bg-slate-50"
+          >
+            <span className="font-bold text-slate-700 flex items-center gap-2"><Plus size={18} /> Qo'shimcha (ixtiyoriy)</span>
+            <ChevronDown size={20} className={`text-slate-400 transition-transform ${showExtra ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showExtra && (
+            <div className="space-y-4 bg-slate-50 rounded-2xl p-4 border border-slate-100">
+              {/* Kategoriya — faqat oddiy sotuvda */}
+              {!isTaxi && (
                 <div>
-                  <label className="block text-sm font-bold text-slate-900 mb-2 ml-1">Bo'limni tanlang</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {CATEGORIES.filter(c => c.id !== 'all' && c.id !== 'taxi').map(c => (
-                      <button key={c.id} type="button" onClick={() => setNewAd({...newAd, category: c.id})} className={`p-3 rounded-2xl border-2 flex flex-col items-center justify-center text-center px-1 transition-all duration-200 ${newAd.category === c.id ? 'bg-blue-50 border-blue-500 text-blue-800 shadow-md ring-2 ring-blue-100 ring-offset-1' : 'bg-white border-slate-100 shadow-sm text-slate-500 hover:border-slate-300'}`}>
-                        <span className="text-2xl mb-1">{c.icon}</span>
-                        <span className="font-bold text-xs">{c.name}</span>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Bo'lim</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {CATEGORIES.filter((c) => c.id !== 'all' && c.id !== 'taxi').map((c) => (
+                      <button key={c.id} type="button" onClick={() => setNewAd({ ...newAd, category: c.id })} className={`p-2.5 rounded-xl border-2 flex flex-col items-center gap-1 transition-all ${newAd.category === c.id ? 'bg-blue-50 border-blue-500 text-blue-800' : 'bg-white border-slate-200 text-slate-500'}`}>
+                        <span className="text-xl">{c.icon}</span>
+                        <span className="font-bold text-[11px] leading-tight text-center">{c.name}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
               <div>
-                <label className="block text-sm font-bold text-slate-900 mb-2 ml-1">{newAd.category === 'taxi' ? 'Yo\'nalish (Qayerdan - Qayerga)' : 'Nima sotyapsiz?'}</label>
-                {newAd.category === 'taxi' && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {['Poshxurt ↔️ Termiz', 'Poshxurt ↔️ Sherobod', 'Poshxurt ↔️ Angor', 'Qishloq ichida', 'Termiz ↔️ Poshxurt'].map(tag => (
-                      <button key={tag} type="button" onClick={() => setNewAd({...newAd, title: tag})} className="bg-blue-50 hover:bg-blue-100 text-blue-700 text-[10px] font-bold px-3 py-1.5 rounded-lg transition-colors border border-blue-100 shadow-sm">{tag}</button>
-                    ))}
-                  </div>
-                )}
-                <input type="text" value={newAd.title} onChange={e => setNewAd({...newAd, title: e.target.value})} placeholder={newAd.category === 'taxi' ? "Masalan: Poshxurt - Termiz" : "Masalan: 1 qop un"} className="w-full px-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-base focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none shadow-sm transition-all" required />
+                <label className="block text-sm font-bold text-slate-700 mb-2">{isTaxi ? 'Soat nechida? Qo\'shimcha' : 'Batafsil ma\'lumot'}</label>
+                <textarea
+                  rows={3}
+                  value={newAd.description}
+                  onChange={(e) => setNewAd({ ...newAd, description: e.target.value })}
+                  placeholder={isTaxi ? "Masalan: Ertalab 07:00 da, Cobalt" : "Mahsulot haqida qo'shimcha"}
+                  className="w-full px-4 py-3 rounded-xl bg-white border-2 border-slate-200 focus:border-blue-500 outline-none resize-none"
+                />
               </div>
               <div>
-                <label className="block text-sm font-bold text-slate-900 mb-2 ml-1">{newAd.category === 'taxi' ? 'Yo\'l kira (so\'mda - 1 kishi uchun)' : 'Narxi qancha? (So\'m)'}</label>
-                <input type="number" value={newAd.price} onChange={e => setNewAd({...newAd, price: e.target.value})} placeholder={newAd.category === 'taxi' ? "Masalan: 50000" : "Narxni yozing"} className="w-full px-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-base focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none shadow-sm transition-all" required />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-900 mb-2 ml-1">{newAd.category === 'taxi' ? 'Hozir qayerdasiz?' : 'Manzil (Qayerdasiz?)'}</label>
-                <input type="text" value={newAd.location} onChange={e => setNewAd({...newAd, location: e.target.value})} placeholder="Masalan: Poshxurt markazi" className="w-full px-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-base focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none shadow-sm transition-all" required />
-              </div>
-              <div>
-                <label className="block text-sm font-bold text-slate-900 mb-2 ml-1">{newAd.category === 'taxi' ? 'Qo\'shimcha ma\'lumot (Soat nechida? Moshina?)' : 'Batafsil ma\'lumot'}</label>
-                <textarea rows={3} value={newAd.description} onChange={e => setNewAd({...newAd, description: e.target.value})} placeholder={newAd.category === 'taxi' ? "Soat 07:00 da chiqaman. Moshina Cobalt. Yukxona bo'sh." : "Mahsulot haqida to'liqroq yozing..."} className="w-full px-4 py-3.5 rounded-2xl bg-white border border-slate-200 text-base focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none resize-none shadow-sm transition-all" required />
+                <label className="block text-sm font-bold text-slate-700 mb-2">Manzil</label>
+                <input
+                  type="text"
+                  value={newAd.location}
+                  onChange={(e) => setNewAd({ ...newAd, location: e.target.value })}
+                  placeholder="Masalan: Poshxurt markazi"
+                  className="w-full px-4 py-3 rounded-xl bg-white border-2 border-slate-200 focus:border-blue-500 outline-none"
+                />
               </div>
             </div>
-            <button type="submit" disabled={isLoading} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg hover:bg-black shadow-xl active:scale-95 transition-all mb-4">
-              {isLoading ? 'Joylanmoqda...' : (newAd.category === 'taxi' ? 'TAXI E\'LONINI JOYLASHTIRISH' : 'E\'LONNI JOYLASH')}
-            </button>
-          </form>
-        </div>
+          )}
+
+          <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-blue-200 active:scale-95 transition-all disabled:opacity-60">
+            {isLoading ? 'Joylanmoqda...' : "E'LONNI JOYLASH"}
+          </button>
+        </form>
       </div>
-      <div className="hidden md:block"><BottomNav view={view} setView={setView} onSellClick={onSellClick} /></div>
+
+      <BottomNav view={view} setView={setView} onSellClick={onSellClick} />
     </div>
   );
 };
