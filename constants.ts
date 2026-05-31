@@ -110,3 +110,8 @@ export const MOCK_PRODUCTS: Product[] = [
     location: 'Yuqori mahalla'
   }
 ];
+
+// Admin huquqiga ega Telegram ID'lar (e'lonlarni ommaviy o'chira oladi)
+export const ADMIN_TELEGRAM_IDS: number[] = [
+  2109316820, // Asadbek (asosiy admin)
+];

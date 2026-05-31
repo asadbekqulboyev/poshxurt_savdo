@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Share2, TruckIcon } from 'lucide-react';
+import { LogOut, Share2, TruckIcon, ShieldCheck, Trash2, Loader2 } from 'lucide-react';
 import { User, ViewState, Product } from '../types';
 import { BottomNav } from '../components/BottomNav';
 import { authService, productService } from '../services/supabaseService';
@@ -17,18 +17,30 @@ interface ProfileScreenProps {
 export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, view, setView, onLogout, showToast, onSellClick }) => {
   const [myProducts, setMyProducts] = useState<Product[]>([]);
   const [currentUser, setCurrentUser] = useState(user);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
-    productService.getProducts().then(all => {
-        setMyProducts(all.filter(p => p.sellerId === user.id));
-    });
+    productService.getMyProducts(user.id).then(setMyProducts);
   }, [user.id]);
+
+  const handleDelete = async (p: Product) => {
+    setDeletingId(p.id);
+    try {
+      await productService.deleteProducts([p]);
+      setMyProducts(prev => prev.filter(x => x.id !== p.id));
+      showToast("E'lon o'chirildi", 'success');
+    } catch (e) {
+      showToast("O'chirishda xatolik", 'error');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const handleShareReferral = async () => {
     const shareData = {
         title: 'Poshxurt Bozor',
         text: `Assalomu alaykum! Poshxurtliklar uchun yangi bozor va taksi ilovasi. Kiring va ko'ring!`,
-        url: currentUser.referralLink || 'https://t.me/poshxurt_bot'
+        url: currentUser.referralLink || 'https://t.me/poshxurt_savdo_bot'
     };
     try {
         if (navigator.share) {
@@ -52,41 +64,81 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, view, setVie
           </div>
           <div className="flex items-center bg-white/10 p-4 rounded-2xl border border-white/20 backdrop-blur-md shadow-lg">
             <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center text-blue-600 text-2xl font-bold border-2 border-blue-100 shadow-sm">{currentUser.name.charAt(0)}</div>
-            <div className="ml-4 text-white">
-                <h2 className="text-xl font-bold">{currentUser.name}</h2>
+            <div className="ml-4 text-white flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl font-bold truncate">{currentUser.name}</h2>
+                  {currentUser.isAdmin && (
+                    <span className="flex items-center gap-1 bg-amber-400 text-amber-900 px-2 py-0.5 rounded-full text-[10px] font-black flex-shrink-0">
+                      <ShieldCheck size={12} /> ADMIN
+                    </span>
+                  )}
+                </div>
                 <p className="text-blue-100 font-mono text-base tracking-wide opacity-90">{currentUser.phone}</p>
             </div>
           </div>
         </div>
         <div className="px-4 -mt-6 space-y-4 md:mt-4">
+          {/* Admin paneli */}
+          {currentUser.isAdmin && (
+            <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-5 rounded-3xl shadow-lg text-white">
+              <div className="flex items-center gap-2 mb-2">
+                <ShieldCheck size={22} className="text-amber-400" />
+                <h3 className="font-bold text-lg">Admin imkoniyatlari</h3>
+              </div>
+              <p className="text-slate-300 text-sm mb-4 leading-relaxed">
+                Sizda barcha huquqlar bor: doimiy Premium, har qanday e'lonni o'chirish, ommaviy tozalash.
+              </p>
+              <button
+                onClick={() => setView('market')}
+                className="w-full bg-amber-400 text-amber-950 py-3 rounded-xl font-bold text-sm hover:bg-amber-300 active:scale-95 transition-all flex items-center justify-center gap-2"
+              >
+                <Trash2 size={18} /> Bozorni tozalash (eski e'lonlar)
+              </button>
+            </div>
+          )}
+
           <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg text-slate-900">Premium Holati</h3>
               {currentUser.isPremium ? <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-bold text-[10px] border border-blue-200 tracking-wide">✅ YOQILGAN</span> : <span className="bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-bold text-[10px] tracking-wide">❌ O'CHIQ</span>}
             </div>
-            <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-100">
-                <div className="flex justify-between font-bold mb-2 text-xs">
-                <span className="text-blue-700">{currentUser.referralCount} ta odam qo'shildi</span>
-                <span className="text-slate-400">3 ta kerak</span>
-                </div>
-                <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min((currentUser.referralCount / 3) * 100, 100)}%` }}></div>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-2 font-medium">Yana {Math.max(0, 3 - currentUser.referralCount)} ta do'stingizni taklif qiling va <b>1 hafta tekin Premium</b> oling!</p>
-            </div>
-            <button onClick={handleShareReferral} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold text-base hover:bg-black shadow-lg shadow-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2"><Share2 size={20} /> DO'STLARGA YUBORISH</button>
+            {currentUser.isAdmin ? (
+              <div className="bg-amber-50 rounded-xl p-4 border border-amber-100 text-center">
+                <p className="text-amber-800 font-bold text-sm">👑 Admin sifatida doimiy Premium</p>
+                <p className="text-amber-600 text-xs mt-1">E'lonlaringiz doim yuqorida (TOP) turadi</p>
+              </div>
+            ) : (
+              <div className="bg-slate-50 rounded-xl p-4 mb-4 border border-slate-100">
+                  <div className="flex justify-between font-bold mb-2 text-xs">
+                  <span className="text-blue-700">{currentUser.referralCount} ta odam qo'shildi</span>
+                  <span className="text-slate-400">3 ta kerak</span>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                  <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${Math.min((currentUser.referralCount / 3) * 100, 100)}%` }}></div>
+                  </div>
+                  <p className="text-[10px] text-slate-500 mt-2 font-medium">Yana {Math.max(0, 3 - currentUser.referralCount)} ta do'stingizni taklif qiling va <b>1 hafta tekin Premium</b> oling!</p>
+              </div>
+            )}
+            <button onClick={handleShareReferral} className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold text-base hover:bg-black shadow-lg shadow-slate-200 active:scale-95 transition-all flex items-center justify-center gap-2 mt-4"><Share2 size={20} /> DO'STLARGA YUBORISH</button>
           </div>
           <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
             <h3 className="font-bold text-lg text-slate-900 mb-4">Mening e'lonlarim</h3>
             {myProducts.length > 0 ? (
               <div className="space-y-3">
                 {myProducts.map(p => (
-                    <div key={p.id} className="flex bg-white border border-slate-100 rounded-xl p-2 gap-3 items-center shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-                    {p.images[0] === 'default-taxi' ? <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center"><TruckIcon size={24} className="text-slate-400" /></div> : <img src={p.images[0]} className="w-16 h-16 rounded-lg object-cover bg-slate-100" />}
+                    <div key={p.id} className="flex bg-white border border-slate-100 rounded-xl p-2 gap-3 items-center shadow-sm hover:shadow-md transition-shadow">
+                    {p.images[0] === 'default-taxi' || !p.images[0] ? <div className="w-16 h-16 rounded-lg bg-slate-100 flex items-center justify-center flex-shrink-0"><TruckIcon size={24} className="text-slate-400" /></div> : <img src={p.images[0]} className="w-16 h-16 rounded-lg object-cover bg-slate-100 flex-shrink-0" />}
                     <div className="flex-1 min-w-0 py-1">
                         <h4 className="font-bold text-base text-slate-900 truncate mb-0.5">{p.title}</h4>
                         <p className="text-blue-600 font-bold text-base">{new Intl.NumberFormat('uz-UZ').format(p.price)}</p>
                     </div>
+                    <button
+                      onClick={() => handleDelete(p)}
+                      disabled={deletingId === p.id}
+                      className="p-2.5 text-red-500 bg-red-50 rounded-xl hover:bg-red-100 active:scale-90 transition-all flex-shrink-0"
+                    >
+                      {deletingId === p.id ? <Loader2 size={18} className="animate-spin" /> : <Trash2 size={18} />}
+                    </button>
                     </div>
                 ))}
               </div>

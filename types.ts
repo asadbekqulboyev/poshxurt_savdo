@@ -4,6 +4,7 @@ export interface User {
   name: string;
   phone: string;
   username?: string;         // Telegram @username (ixtiyoriy)
+  isAdmin: boolean;          // Admin — barcha imkoniyatlar
   isPremium: boolean;
   premiumExpiry?: number; // timestamp
   referralCount: number;

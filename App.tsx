@@ -137,7 +137,7 @@ export default function App() {
           Ilovaga kirish uchun Telegram botimizni oching va <b>"Boshlash"</b> tugmasini bosing.
         </p>
         <a
-          href="https://t.me/poshxurt_bot"
+          href="https://t.me/poshxurt_savdo_bot"
           className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all"
         >
           Botni ochish
@@ -156,7 +156,7 @@ export default function App() {
       )}
 
       {view === 'market' && (
-        <MarketScreen view={view} setView={setView} onProductClick={(p) => { setSelectedProduct(p); setView('product-detail'); }} onSellClick={handleSellClick} />
+        <MarketScreen view={view} setView={setView} user={user} onProductClick={(p) => { setSelectedProduct(p); setView('product-detail'); }} onSellClick={handleSellClick} showToast={showToast} />
       )}
 
       {view === 'taxi-choice' && (
