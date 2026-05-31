@@ -66,28 +66,35 @@ export default function App() {
       setAuthStatus('authed');
     }
 
-    // 2) FONDA: Telegram'dan yangi ma'lumotni olib, cache'ni yangilaymiz
+    // 2) FONDA: serverдан (imzo tekshiruvi bilan) yangi ma'lumotni olamiz
     const resolveTelegram = async () => {
-      // initData ba'zan kech keladi — 12 marta (~6 soniya) urinib ko'ramiz
+      // initData ba'zan kech keladi — bir necha marta urinib ko'ramiz
       for (let attempt = 0; attempt < 12; attempt++) {
         if (cancelled) return;
-        const tgUser = window.Telegram?.WebApp?.initDataUnsafe?.user;
-        if (tgUser?.id) {
-          const found = await authService.getUserByTelegramId(tgUser.id);
-          if (cancelled) return;
-          if (found) {
-            setUser(found);
-            setAuthStatus('authed');
-          } else if (!cached) {
-            setDebugInfo(`Telegram ID: ${tgUser.id} — bazada topilmadi. Botda /start bosing.`);
-            setAuthStatus('no-telegram');
+        const initData = window.Telegram?.WebApp?.initData;
+        if (initData) {
+          try {
+            const me = await authService.getMe();
+            if (cancelled) return;
+            if (me) {
+              setUser(me);
+              setAuthStatus('authed');
+            } else if (!cached) {
+              setDebugInfo("Ro'yxatdan o'tmagansiz. Botda /start bosing.");
+              setAuthStatus('no-telegram');
+            }
+          } catch (e: any) {
+            if (!cached) {
+              setDebugInfo(`Server xatosi: ${e?.message ?? 'nomalum'}`);
+              setAuthStatus('no-telegram');
+            }
           }
           return;
         }
         await new Promise((r) => setTimeout(r, 500));
       }
 
-      // Telegram ma'lumoti umuman kelmadi
+      // initData umuman kelmadi
       if (cancelled) return;
       if (!cached) {
         const t = window.Telegram?.WebApp;

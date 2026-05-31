@@ -45,8 +45,6 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({ user, view, setVie
     try {
         if (navigator.share) {
             await navigator.share(shareData);
-            const updated = await authService.incrementReferral(currentUser.id);
-            if (updated) setCurrentUser(updated);
         } else {
             await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
             showToast("Havola nusxalandi! Telegramda ulashing.", 'success');
