@@ -1,0 +1,26 @@
+# DigitalOcean App Platform konfiguratsiyasi (bot — worker)
+# Bu bot doimiy ishlaydigan fon jarayoni (polling), shuning uchun "worker".
+name: poshxurt-bot
+region: fra   # Frankfurt — Telegram serveriga yaqin
+
+workers:
+  - name: telegram-bot
+    github:
+      repo: asadbekqulboyev/poshxurt_savdo
+      branch: main
+      deploy_on_push: true
+    source_dir: /bot          # bot kodi shu papkada
+    instance_size_slug: basic-xxs   # eng kichik (bot uchun yetarli)
+    instance_count: 1
+    run_command: node bot.js
+    envs:
+      - key: BOT_TOKEN
+        scope: RUN_TIME
+        type: SECRET
+      - key: SUPABASE_URL
+        scope: RUN_TIME
+      - key: SUPABASE_SERVICE_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: WEBAPP_URL
+        scope: RUN_TIME
