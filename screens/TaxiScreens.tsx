@@ -7,48 +7,52 @@ import { productService } from '../services/supabaseService';
 
 // --- Taxi Choice Screen ---
 export const TaxiChoiceScreen = ({ view, setView, onSellClick }: { view: ViewState, setView: (v: ViewState) => void, onSellClick: () => void }) => (
-  <div className="min-h-screen bg-slate-50 flex flex-col relative md:justify-center">
+  <div className="min-h-screen bg-slate-50 flex flex-col relative pb-24 md:justify-center">
     <div className="w-full max-w-4xl mx-auto md:bg-white md:rounded-[3rem] md:shadow-2xl md:overflow-hidden md:min-h-[600px] md:flex md:flex-row">
-        <div className="bg-yellow-400 pt-12 pb-8 px-6 rounded-b-[2.5rem] md:rounded-none md:w-5/12 shadow-xl relative overflow-hidden md:flex md:flex-col md:justify-center">
+        <div className="bg-yellow-400 pt-6 pb-7 px-5 rounded-b-[2rem] md:rounded-none md:w-5/12 shadow-xl relative overflow-hidden md:flex md:flex-col md:justify-center">
             <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-300 rounded-full blur-2xl opacity-50 -mr-10 -mt-10"></div>
-            <div className="relative z-10 text-center">
-                <button onClick={() => setView('market')} className="absolute top-0 left-0 bg-white/30 p-2 rounded-full text-black/70 hover:bg-white/50 transition-colors md:left-4 md:top-4">
+            <div className="relative z-10">
+                <button onClick={() => setView('home')} className="bg-black/10 p-2 rounded-full text-black/70 active:bg-black/20 transition-colors mb-3 inline-flex">
                     <ChevronLeft size={24} />
                 </button>
-                <div className="w-20 h-20 bg-black/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm mx-auto shadow-inner">
-                    <TruckIcon size={40} className="text-black" />
+                <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 bg-black/10 rounded-2xl flex items-center justify-center flex-shrink-0">
+                        <TruckIcon size={30} className="text-black" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black text-black tracking-tight leading-none">TAKSI</h1>
+                        <p className="text-black/70 font-medium text-sm mt-1">Qatnash uchun qulay xizmat</p>
+                    </div>
                 </div>
-                <h1 className="text-3xl font-black text-center text-black mb-2 tracking-tight">TAXI XIZMATI</h1>
-                <p className="text-center text-black/70 font-medium text-base px-8">Qishloq ichida va shaharga qatnash uchun eng qulay usul</p>
             </div>
         </div>
-        <div className="flex-1 px-6 py-8 flex flex-col gap-5 justify-center bg-white md:p-12">
-            <button 
+        <div className="flex-1 px-4 py-6 flex flex-col gap-4 justify-center bg-white md:p-12">
+            <button
                 onClick={() => setView('passenger-request')}
-                className="group relative overflow-hidden bg-slate-50 hover:bg-yellow-50 border-2 border-slate-100 hover:border-yellow-400 rounded-3xl p-6 transition-all duration-300 active:scale-95 shadow-sm flex items-center"
+                className="bg-slate-50 border-2 border-slate-100 rounded-3xl p-5 active:scale-[0.98] transition-all flex items-center"
             >
-                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm text-yellow-500 mr-5 flex-shrink-0 group-hover:scale-110 transition-transform">
-                    <Navigation size={28} fill="currentColor" />
+                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-sm text-yellow-500 mr-4 flex-shrink-0">
+                    <Navigation size={26} fill="currentColor" />
                 </div>
-                <div className="flex-1">
-                    <h2 className="text-xl font-black text-slate-800 text-left mb-1">Men Yo'lovchiman</h2>
-                    <p className="text-left text-slate-500 text-sm leading-snug">Manzilni ayting, haydovchilarga xabar beramiz.</p>
+                <div className="flex-1 min-w-0 text-left">
+                    <h2 className="text-lg font-black text-slate-800 mb-0.5">Yo'lovchiman 🙋</h2>
+                    <p className="text-slate-500 text-sm leading-snug">Manzilni ayting, taksi chaqiring</p>
                 </div>
-                <ChevronRight className="text-slate-300 group-hover:text-yellow-500 transition-colors ml-2" />
+                <ChevronRight className="text-slate-300 ml-2 flex-shrink-0" />
             </button>
-            <button 
-                onClick={() => setView('driver-feed')} 
-                className="group relative overflow-hidden bg-slate-900 text-white rounded-3xl p-6 transition-all duration-300 active:scale-95 shadow-xl shadow-slate-200 hover:shadow-2xl hover:bg-black flex items-center"
+            <button
+                onClick={() => setView('driver-feed')}
+                className="bg-slate-900 text-white rounded-3xl p-5 active:scale-[0.98] transition-all shadow-lg flex items-center"
             >
-                <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm relative mr-5 flex-shrink-0 group-hover:bg-white/20 transition-colors">
-                    <TruckIcon size={28} />
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border border-slate-900"></div>
+                <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center relative mr-4 flex-shrink-0">
+                    <TruckIcon size={26} />
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-slate-900"></div>
                 </div>
-                <div className="flex-1">
-                    <h2 className="text-xl font-black text-white text-left mb-1">Men Haydovchiman</h2>
-                    <p className="text-left text-slate-400 text-sm leading-snug">Buyurtmalarni ko'rish va mijoz olish.</p>
+                <div className="flex-1 min-w-0 text-left">
+                    <h2 className="text-lg font-black text-white mb-0.5">Haydovchiman 🚖</h2>
+                    <p className="text-slate-400 text-sm leading-snug">Buyurtmalarni ko'rish</p>
                 </div>
-                <ChevronRight className="text-slate-600 group-hover:text-white transition-colors ml-2" />
+                <ChevronRight className="text-slate-600 ml-2 flex-shrink-0" />
             </button>
         </div>
     </div>
