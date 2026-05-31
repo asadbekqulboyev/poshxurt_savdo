@@ -39,34 +39,66 @@ export default function App() {
   }, []);
 
   // --- TELEGRAM ID ORQALI AVTOMATIK KIRISH ---
+  const [debugInfo, setDebugInfo] = useState<string>('');
+
   useEffect(() => {
-    const init = async () => {
+    let cancelled = false;
+
+    const tryFindUser = async (): Promise<boolean> => {
       const tg = window.Telegram?.WebApp;
       const tgUser = tg?.initDataUnsafe?.user;
 
-      if (!tgUser?.id) {
-        // Brauzerda yoki botsiz ochilgan — avval lokal sessiyaga qaraymiz
-        const cached = authService.getCurrentUser();
-        if (cached) {
-          setUser(cached);
-          setAuthStatus('authed');
-        } else {
-          setAuthStatus('no-telegram');
-        }
-        return;
-      }
+      if (!tgUser?.id) return false;
 
-      // Telegram'dan kelgan id bo'yicha bazadan foydalanuvchini topamiz
       const found = await authService.getUserByTelegramId(tgUser.id);
+      if (cancelled) return true;
+
       if (found) {
         setUser(found);
         setAuthStatus('authed');
+        return true;
+      }
+      // Telegram ID keldi, lekin bazada yo'q
+      setDebugInfo(`Telegram ID: ${tgUser.id} — bazada topilmadi`);
+      return false;
+    };
+
+    const init = async () => {
+      // Telegram WebApp SDK ba'zan kech tayyor bo'ladi — bir necha marta urinamiz
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const tg = window.Telegram?.WebApp;
+        const tgUser = tg?.initDataUnsafe?.user;
+
+        if (tgUser?.id) {
+          const ok = await tryFindUser();
+          if (ok) return;
+          // ID bor, lekin bazada yo'q — qayta urinish foyda bermaydi
+          setAuthStatus('no-telegram');
+          return;
+        }
+        // Hali user yo'q — 400ms kutib qayta urinamiz
+        await new Promise((r) => setTimeout(r, 400));
+      }
+
+      if (cancelled) return;
+
+      // 5 urinishdan keyin ham Telegram user yo'q — brauzer yoki cache
+      const cached = authService.getCurrentUser();
+      if (cached) {
+        setUser(cached);
+        setAuthStatus('authed');
       } else {
-        // Bazada yo'q — demak botda /start bosib raqam ulashilmagan
+        const tg = window.Telegram?.WebApp;
+        setDebugInfo(
+          `Telegram aniqlanmadi. initData uzunligi: ${tg?.initData?.length ?? 'yo`q'}, ` +
+          `platforma: ${tg?.platform ?? 'yo`q'}`
+        );
         setAuthStatus('no-telegram');
       }
     };
+
     init();
+    return () => { cancelled = true; };
   }, []);
 
   // --- BACK BUTTON ---
@@ -142,6 +174,9 @@ export default function App() {
         >
           Botni ochish
         </a>
+        {debugInfo && (
+          <p className="mt-6 text-[11px] text-slate-400 font-mono max-w-xs break-words">{debugInfo}</p>
+        )}
       </div>
     );
   }
