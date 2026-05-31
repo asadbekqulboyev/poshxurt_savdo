@@ -159,21 +159,49 @@ export default function App() {
 
   // --- TELEGRAM/BOT ORQALI KIRISH KERAK ---
   if (authStatus === 'no-telegram' || !user) {
+    const tg = window.Telegram?.WebApp;
+    const insideTelegram = !!tg && (tg.platform ?? 'unknown') !== 'unknown';
+
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-8 text-center">
         <div className="w-20 h-20 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 mb-6">
           <ShoppingBag size={40} strokeWidth={2.5} />
         </div>
         <h1 className="text-2xl font-black text-slate-900 mb-2">Poshxurt Bozor</h1>
-        <p className="text-slate-500 font-medium mb-6 max-w-xs leading-relaxed">
-          Ilovaga kirish uchun Telegram botimizni oching va <b>"Boshlash"</b> tugmasini bosing.
-        </p>
-        <a
-          href="https://t.me/poshxurt_savdo_bot"
-          className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all"
-        >
-          Botni ochish
-        </a>
+
+        {insideTelegram ? (
+          <>
+            <p className="text-slate-500 font-medium mb-6 max-w-xs leading-relaxed">
+              Ma'lumotlaringizni o'qib bo'lmadi. Iltimos, ilovani <b>pastdagi menyu tugmasi</b> orqali oching
+              yoki Telegramni telefoningizda ishlatib ko'ring.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all mb-3"
+            >
+              Qayta urinish
+            </button>
+            <a
+              href="https://t.me/poshxurt_savdo_bot?startapp=open"
+              className="text-blue-600 font-bold text-sm hover:underline"
+            >
+              Botni qayta ochish
+            </a>
+          </>
+        ) : (
+          <>
+            <p className="text-slate-500 font-medium mb-6 max-w-xs leading-relaxed">
+              Ilovaga kirish uchun Telegram botimizni oching va <b>"Boshlash"</b> tugmasini bosing.
+            </p>
+            <a
+              href="https://t.me/poshxurt_savdo_bot"
+              className="bg-blue-600 text-white px-8 py-3.5 rounded-2xl font-bold shadow-lg shadow-blue-200 active:scale-95 transition-all"
+            >
+              Botni ochish
+            </a>
+          </>
+        )}
+
         {debugInfo && (
           <p className="mt-6 text-[11px] text-slate-400 font-mono max-w-xs break-words">{debugInfo}</p>
         )}
