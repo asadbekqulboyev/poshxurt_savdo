@@ -7,23 +7,19 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "server": "cd server && node server.js",
-    "setup": "npm install && cd server && npm install && cd ..",
-    "start": "concurrently \"npm run server\" \"npm run dev\""
+    "bot": "cd bot && node bot.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.89.0",
     "lucide-react": "^0.263.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tailwind": "^4.0.0"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
     "@types/react-dom": "^18.2.7",
     "@vitejs/plugin-react": "^4.0.3",
     "autoprefixer": "^10.4.23",
-    "concurrently": "^8.2.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
     "typescript": "^5.0.2",

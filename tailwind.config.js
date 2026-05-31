@@ -5,6 +5,8 @@ export default {
     "./App.tsx",
     "./index.tsx",
     "./components/**/*.{js,ts,jsx,tsx}",
+    "./screens/**/*.{js,ts,jsx,tsx}",
+    "./client/**/*.{js,ts,jsx,tsx}",
     "./services/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {

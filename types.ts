@@ -1,11 +1,13 @@
 export interface User {
   id: string;
+  telegramId: number;        // Telegram user id — asosiy identifikator
   name: string;
   phone: string;
+  username?: string;         // Telegram @username (ixtiyoriy)
   isPremium: boolean;
   premiumExpiry?: number; // timestamp
   referralCount: number;
-  referralLink: string;
+  referralLink?: string;
   avatar?: string;
 }
 
@@ -39,7 +41,7 @@ export interface PassengerRequest {
   createdAt: number;
 }
 
-export type ViewState = 'landing' | 'market' | 'create' | 'profile' | 'product-detail' | 'taxi-choice' | 'passenger-request' | 'driver-feed';
+export type ViewState = 'home' | 'market' | 'create' | 'profile' | 'product-detail' | 'taxi-choice' | 'passenger-request' | 'driver-feed';
 
 export interface Category {
   id: string;
