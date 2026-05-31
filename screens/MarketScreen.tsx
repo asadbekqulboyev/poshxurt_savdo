@@ -161,7 +161,7 @@ export const MarketScreen: React.FC<MarketScreenProps> = ({ view, setView, user,
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`flex items-center px-4 py-2 rounded-full whitespace-nowrap transition-all border shadow-sm flex-shrink-0 ${activeCategory === cat.id ? 'bg-blue-800 border-blue-400 text-white font-bold' : 'bg-white/95 border-transparent text-slate-700 font-medium'}`}
+                className={`flex items-center px-4 py-2.5 rounded-full whitespace-nowrap transition-all flex-shrink-0 active:scale-95 ${activeCategory === cat.id ? 'bg-white text-blue-700 font-bold shadow-md' : 'bg-blue-500/40 text-white font-medium'}`}
               >
                 <span className="text-lg mr-1.5">{cat.icon}</span>
                 <span className="text-sm">{cat.name}</span>
