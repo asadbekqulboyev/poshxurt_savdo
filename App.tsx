@@ -18,13 +18,25 @@ declare global {
 
 type AuthStatus = 'loading' | 'authed' | 'no-telegram';
 
+// Bot tugmasi orqali kelgan ekran: ?screen=market | taxi
+const getInitialView = (): ViewState => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const screen = params.get('screen');
+    if (screen === 'taxi') return 'taxi-choice';
+    if (screen === 'market') return 'market';
+  } catch (e) {}
+  return 'home';
+};
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading');
-  const [view, setView] = useState<ViewState>('home');
+  const [view, setView] = useState<ViewState>(getInitialView());
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [createAdCategory, setCreateAdCategory] = useState<string>('others');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean } | null>(null);
+
 
   // --- TELEGRAM WEB APP INIT ---
   useEffect(() => {
