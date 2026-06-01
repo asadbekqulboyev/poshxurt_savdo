@@ -63,8 +63,9 @@ export const TaxiChoiceScreen = ({ view, setView, onSellClick }: { view: ViewSta
 
 // --- Passenger Request Screen ---
 export const PassengerRequestScreen = ({ view, setView, user, showToast, onSellClick }: { view: ViewState, setView: (v: ViewState) => void, user: User, showToast: any, onSellClick: () => void }) => {
-    const [req, setReq] = useState({ from: '', to: '', price: '', phone: user.phone });
-    const [fromCoords, setFromCoords] = useState<{ lat: number; lng: number } | null>(null);
+    const [message, setMessage] = useState('');
+    const [price, setPrice] = useState('');
+    const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [locating, setLocating] = useState(false);
 
@@ -73,11 +74,10 @@ export const PassengerRequestScreen = ({ view, setView, user, showToast, onSellC
         try {
             const loc = await getCurrentLocation();
             if (loc) {
-                setFromCoords({ lat: loc.latitude, lng: loc.longitude });
-                setReq(prev => ({ ...prev, from: '📍 Mening joylashuvim (xaritada)' }));
+                setCoords({ lat: loc.latitude, lng: loc.longitude });
                 showToast('Joylashuv aniqlandi ✅', 'success');
             } else {
-                showToast("Joylashuvni olib bo'lmadi. Qo'lda yozing.", 'error');
+                showToast("Joylashuvni olib bo'lmadi. Manzilni yozib yuboring.", 'error');
             }
         } finally {
             setLocating(false);
@@ -86,12 +86,19 @@ export const PassengerRequestScreen = ({ view, setView, user, showToast, onSellC
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        // Kamida joylashuv yoki matn bo'lishi kerak
+        if (!coords && !message.trim()) {
+            showToast("Joylashuvingizni yuboring yoki manzilni yozing", 'error');
+            return;
+        }
         setIsLoading(true);
         try {
             await productService.createPassengerRequest({
-                ...req,
-                fromLat: fromCoords?.lat,
-                fromLng: fromCoords?.lng,
+                from: coords ? '📍 Joylashuv yuborilgan' : (message.trim() || 'Belgilanmagan'),
+                to: message.trim() || '—',
+                price,
+                fromLat: coords?.lat,
+                fromLng: coords?.lng,
             });
             const audio = new Audio('https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3');
             audio.volume = 0.5;
@@ -112,48 +119,55 @@ export const PassengerRequestScreen = ({ view, setView, user, showToast, onSellC
                     </button>
                     <h1 className="font-black text-xl text-slate-900">Taksi chaqirish</h1>
                 </div>
+
                 <div className="p-4">
                     <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-5 flex items-start">
                         <Megaphone className="text-yellow-600 mr-3 flex-shrink-0 mt-0.5" size={20} />
-                        <p className="text-yellow-800 text-sm font-medium leading-relaxed">So'rovingiz barcha haydovchilarga ko'rinadi. Ular sizga qo'ng'iroq qiladi.</p>
+                        <p className="text-yellow-800 text-sm font-medium leading-relaxed">Joylashuvingizni yuboring, haydovchilar sizni xaritada topib keladi.</p>
                     </div>
+
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Qayerdan + GPS */}
-                        <div>
-                            <label className="block text-base font-bold text-slate-900 mb-2">📍 Qayerdan</label>
-                            <button
-                                type="button"
-                                onClick={handleGetLocation}
-                                disabled={locating}
-                                className={`w-full mb-2 py-3.5 rounded-2xl font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all border-2 ${fromCoords ? 'bg-green-50 border-green-300 text-green-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}
-                            >
-                                <MapPin size={20} />
-                                {locating ? 'Aniqlanmoqda...' : fromCoords ? '✅ Joylashuv olindi' : 'Joriy joylashuvni yuborish'}
-                            </button>
-                            <input type="text" value={req.from} onChange={e => { setReq({...req, from: e.target.value}); setFromCoords(null); }} placeholder="Yoki qo'lda yozing: Poshxurt markaz" className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg transition-all" required />
-                            <p className="text-xs text-slate-400 mt-1.5 ml-1">Joylashuvni yuborsangiz, haydovchi sizni xaritada topadi</p>
-                        </div>
-                        {/* Qayerga */}
-                        <div>
-                            <label className="block text-base font-bold text-slate-900 mb-2">🎯 Qayerga</label>
-                            <input type="text" value={req.to} onChange={e => setReq({...req, to: e.target.value})} placeholder="Masalan: Termiz" className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg transition-all" required />
-                        </div>
-                        {/* Narx (ixtiyoriy) */}
-                        <div>
-                            <label className="block text-base font-bold text-slate-900 mb-2">💰 Taklif narx <span className="text-slate-400 text-sm font-medium">(ixtiyoriy)</span></label>
-                            <div className="relative">
-                                <input type="number" inputMode="numeric" value={req.price} onChange={e => setReq({...req, price: e.target.value})} placeholder="Kelishamiz" className="w-full px-4 py-4 pr-16 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg font-bold transition-all" />
-                                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">so'm</span>
-                            </div>
-                        </div>
-                        {/* Telefon avtomatik */}
-                        <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3 flex items-center gap-2">
-                            <span className="text-lg">📞</span>
-                            <p className="text-sm text-green-800 font-medium">Raqamingiz: <b>{req.phone}</b></p>
+                        {/* 1. KATTA joylashuv tugmasi (Telegram uslubi) */}
+                        <button
+                            type="button"
+                            onClick={handleGetLocation}
+                            disabled={locating}
+                            className={`w-full py-5 rounded-3xl font-bold text-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-sm ${coords ? 'bg-green-500 text-white shadow-green-200' : 'bg-blue-600 text-white shadow-blue-200'}`}
+                        >
+                            <MapPin size={26} />
+                            {locating ? 'Aniqlanmoqda...' : coords ? '✅ Joylashuv yuborildi' : 'Joylashuvni yuborish'}
+                        </button>
+                        {coords && (
+                            <a href={mapsLink(coords.lat, coords.lng)} target="_blank" rel="noopener noreferrer" className="block text-center text-blue-600 text-sm font-bold underline">
+                                Joylashuvni tekshirish
+                            </a>
+                        )}
+
+                        {/* 2. Matn input (qayerga / izoh) */}
+                        <div className="bg-white border-2 border-slate-200 rounded-2xl p-2 flex items-end gap-2 focus-within:border-blue-500 transition-all">
+                            <textarea
+                                value={message}
+                                onChange={e => setMessage(e.target.value)}
+                                placeholder="Qayerga borasiz? Izoh yozing... (masalan: Termizga, 2 kishi)"
+                                rows={2}
+                                className="flex-1 px-2 py-2 outline-none resize-none text-base bg-transparent"
+                            />
                         </div>
 
-                        <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-blue-200 active:scale-95 transition-all disabled:opacity-60">
-                            {isLoading ? 'Yuborilmoqda...' : 'TAKSI CHAQIRISH'}
+                        {/* 3. Narx (ixtiyoriy) */}
+                        <div className="relative">
+                            <input type="number" inputMode="numeric" value={price} onChange={e => setPrice(e.target.value)} placeholder="Narx taklifi (ixtiyoriy)" className="w-full px-4 py-4 pr-16 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg font-bold transition-all" />
+                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">so'm</span>
+                        </div>
+
+                        {/* Telefon avtomatik */}
+                        <div className="bg-slate-100 rounded-2xl px-4 py-3 flex items-center gap-2">
+                            <span className="text-lg">📞</span>
+                            <p className="text-sm text-slate-600 font-medium">Raqamingiz avtomatik: <b>{user.phone}</b></p>
+                        </div>
+
+                        <button type="submit" disabled={isLoading} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-lg shadow-lg active:scale-95 transition-all disabled:opacity-60">
+                            {isLoading ? 'Yuborilmoqda...' : 'YUBORISH'}
                         </button>
                     </form>
                 </div>
@@ -195,24 +209,22 @@ export const DriverFeedScreen = ({ view, setView, onSellClick, onTaxiAdCreate }:
                                     <div className="flex items-center text-red-500 bg-red-50 px-3 py-1.5 rounded-lg"><Bell size={14} className="fill-red-500 mr-1.5" /><span className="text-xs font-bold">Yangi</span></div>
                                     <div className="flex items-center text-slate-400 text-sm font-medium"><Clock size={14} className="mr-1" />{new Date(req.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                                 </div>
-                                <div className="grid grid-cols-[auto_1fr] gap-4 mb-4">
-                                    <div className="flex flex-col items-center justify-center space-y-1 pt-1.5">
-                                        <div className="w-3 h-3 rounded-full bg-blue-500 ring-4 ring-blue-50"></div>
-                                        <div className="w-0.5 h-8 bg-slate-200"></div>
-                                        <div className="w-3 h-3 rounded-full bg-green-500 ring-4 ring-green-50"></div>
+
+                                {/* Yo'lovchi xabari */}
+                                {req.to && req.to !== '—' && (
+                                    <div className="flex items-start gap-2 mb-4">
+                                        <span className="text-xl flex-shrink-0">💬</span>
+                                        <p className="text-slate-900 font-bold text-lg leading-snug">{req.to}</p>
                                     </div>
-                                    <div className="space-y-3">
-                                        <div><p className="text-xs text-slate-400 font-bold mb-0.5">Qayerdan</p><p className="text-slate-900 font-bold text-lg leading-tight">{req.from}</p></div>
-                                        <div><p className="text-xs text-slate-400 font-bold mb-0.5">Qayerga</p><p className="text-slate-900 font-bold text-lg leading-tight">{req.to}</p></div>
-                                    </div>
-                                </div>
+                                )}
+
                                 <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl mb-3 border border-slate-100">
                                     <span className="text-slate-500 text-sm font-bold">Narx:</span>
                                     <span className="text-blue-600 font-black text-xl">{req.price ? new Intl.NumberFormat('uz-UZ').format(Number(req.price)) + " so'm" : "Kelishilgan"}</span>
                                 </div>
                                 {req.fromLat && req.fromLng && (
-                                    <a href={mapsLink(req.fromLat, req.fromLng)} target="_blank" rel="noopener noreferrer" className="w-full bg-blue-50 text-blue-700 py-3 rounded-2xl font-bold text-base flex items-center justify-center mb-2 active:scale-[0.98] transition-all border border-blue-200">
-                                        <MapPin size={20} className="mr-2" />Xaritada ko'rish
+                                    <a href={mapsLink(req.fromLat, req.fromLng)} target="_blank" rel="noopener noreferrer" className="w-full bg-blue-50 text-blue-700 py-4 rounded-2xl font-bold text-base flex items-center justify-center mb-2 active:scale-[0.98] transition-all border-2 border-blue-200">
+                                        <MapPin size={20} className="mr-2" />📍 Yo'lovchi joylashuvi (xaritada)
                                     </a>
                                 )}
                                 <a href={`tel:${req.phone.replace(/\s/g, '')}`} className="w-full bg-green-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center active:scale-[0.98] transition-all shadow-lg shadow-green-200">
