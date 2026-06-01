@@ -69,7 +69,13 @@ export const productService = {
   },
 
   async createPassengerRequest(req: any): Promise<void> {
-    await api.post('/taxi-requests', { from: req.from, to: req.to, price: req.price });
+    await api.post('/taxi-requests', {
+      from: req.from,
+      to: req.to,
+      price: req.price,
+      fromLat: req.fromLat,
+      fromLng: req.fromLng,
+    });
   },
 
   async getPassengerRequests(): Promise<PassengerRequest[]> {

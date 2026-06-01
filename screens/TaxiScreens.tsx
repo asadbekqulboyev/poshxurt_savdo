@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { TruckIcon, ChevronLeft, Navigation, ChevronRight, Megaphone, Bell, Clock, Phone } from 'lucide-react';
+import { TruckIcon, ChevronLeft, Navigation, ChevronRight, Megaphone, MapPin, Bell, Clock, Phone } from 'lucide-react';
 import { ViewState, PassengerRequest, User } from '../types';
 import { BottomNav } from '../components/BottomNav';
 import { productService } from '../services/supabaseService';
+import { getCurrentLocation, mapsLink } from '../services/location';
 
 
 // --- Taxi Choice Screen ---
@@ -63,13 +64,35 @@ export const TaxiChoiceScreen = ({ view, setView, onSellClick }: { view: ViewSta
 // --- Passenger Request Screen ---
 export const PassengerRequestScreen = ({ view, setView, user, showToast, onSellClick }: { view: ViewState, setView: (v: ViewState) => void, user: User, showToast: any, onSellClick: () => void }) => {
     const [req, setReq] = useState({ from: '', to: '', price: '', phone: user.phone });
+    const [fromCoords, setFromCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [locating, setLocating] = useState(false);
+
+    const handleGetLocation = async () => {
+        setLocating(true);
+        try {
+            const loc = await getCurrentLocation();
+            if (loc) {
+                setFromCoords({ lat: loc.latitude, lng: loc.longitude });
+                setReq(prev => ({ ...prev, from: '📍 Mening joylashuvim (xaritada)' }));
+                showToast('Joylashuv aniqlandi ✅', 'success');
+            } else {
+                showToast("Joylashuvni olib bo'lmadi. Qo'lda yozing.", 'error');
+            }
+        } finally {
+            setLocating(false);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         try {
-            await productService.createPassengerRequest(req);
+            await productService.createPassengerRequest({
+                ...req,
+                fromLat: fromCoords?.lat,
+                fromLng: fromCoords?.lng,
+            });
             const audio = new Audio('https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3');
             audio.volume = 0.5;
             audio.play().catch(() => {});
@@ -95,10 +118,20 @@ export const PassengerRequestScreen = ({ view, setView, user, showToast, onSellC
                         <p className="text-yellow-800 text-sm font-medium leading-relaxed">So'rovingiz barcha haydovchilarga ko'rinadi. Ular sizga qo'ng'iroq qiladi.</p>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Qayerdan */}
+                        {/* Qayerdan + GPS */}
                         <div>
                             <label className="block text-base font-bold text-slate-900 mb-2">📍 Qayerdan</label>
-                            <input type="text" value={req.from} onChange={e => setReq({...req, from: e.target.value})} placeholder="Masalan: Poshxurt markaz" className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg transition-all" required />
+                            <button
+                                type="button"
+                                onClick={handleGetLocation}
+                                disabled={locating}
+                                className={`w-full mb-2 py-3.5 rounded-2xl font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all border-2 ${fromCoords ? 'bg-green-50 border-green-300 text-green-700' : 'bg-blue-50 border-blue-200 text-blue-700'}`}
+                            >
+                                <MapPin size={20} />
+                                {locating ? 'Aniqlanmoqda...' : fromCoords ? '✅ Joylashuv olindi' : 'Joriy joylashuvni yuborish'}
+                            </button>
+                            <input type="text" value={req.from} onChange={e => { setReq({...req, from: e.target.value}); setFromCoords(null); }} placeholder="Yoki qo'lda yozing: Poshxurt markaz" className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg transition-all" required />
+                            <p className="text-xs text-slate-400 mt-1.5 ml-1">Joylashuvni yuborsangiz, haydovchi sizni xaritada topadi</p>
                         </div>
                         {/* Qayerga */}
                         <div>
@@ -177,6 +210,11 @@ export const DriverFeedScreen = ({ view, setView, onSellClick, onTaxiAdCreate }:
                                     <span className="text-slate-500 text-sm font-bold">Narx:</span>
                                     <span className="text-blue-600 font-black text-xl">{req.price ? new Intl.NumberFormat('uz-UZ').format(Number(req.price)) + " so'm" : "Kelishilgan"}</span>
                                 </div>
+                                {req.fromLat && req.fromLng && (
+                                    <a href={mapsLink(req.fromLat, req.fromLng)} target="_blank" rel="noopener noreferrer" className="w-full bg-blue-50 text-blue-700 py-3 rounded-2xl font-bold text-base flex items-center justify-center mb-2 active:scale-[0.98] transition-all border border-blue-200">
+                                        <MapPin size={20} className="mr-2" />Xaritada ko'rish
+                                    </a>
+                                )}
                                 <a href={`tel:${req.phone.replace(/\s/g, '')}`} className="w-full bg-green-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center active:scale-[0.98] transition-all shadow-lg shadow-green-200">
                                     <Phone size={22} className="mr-2 fill-white" />Qo'ng'iroq qilish
                                 </a>

@@ -39,6 +39,8 @@ export interface PassengerRequest {
   to: string;
   price: string;
   phone: string;
+  fromLat?: number;
+  fromLng?: number;
   createdAt: number;
 }
 
