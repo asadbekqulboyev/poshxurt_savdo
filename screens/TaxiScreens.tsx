@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { TruckIcon, ChevronLeft, Navigation, ChevronRight, Megaphone, MapPin, Bell, Clock, Phone } from 'lucide-react';
+import { TruckIcon, ChevronLeft, Navigation, ChevronRight, MapPin, Bell, Clock, Phone } from 'lucide-react';
 import { ViewState, PassengerRequest, User } from '../types';
 import { BottomNav } from '../components/BottomNav';
+import { MapPicker } from '../components/MapPicker';
 import { productService } from '../services/supabaseService';
-import { getCurrentLocation, mapsLink } from '../services/location';
+import { mapsLink } from '../services/location';
 
 
 // --- Taxi Choice Screen ---
@@ -63,48 +64,31 @@ export const TaxiChoiceScreen = ({ view, setView, onSellClick }: { view: ViewSta
 
 // --- Passenger Request Screen ---
 export const PassengerRequestScreen = ({ view, setView, user, showToast, onSellClick }: { view: ViewState, setView: (v: ViewState) => void, user: User, showToast: any, onSellClick: () => void }) => {
-    const [message, setMessage] = useState('');
+    const [destination, setDestination] = useState('');
     const [price, setPrice] = useState('');
     const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [locating, setLocating] = useState(false);
-
-    const handleGetLocation = async () => {
-        setLocating(true);
-        try {
-            const loc = await getCurrentLocation();
-            if (loc) {
-                setCoords({ lat: loc.latitude, lng: loc.longitude });
-                showToast('Joylashuv aniqlandi ✅', 'success');
-            } else {
-                showToast("Joylashuvni olib bo'lmadi. Manzilni yozib yuboring.", 'error');
-            }
-        } finally {
-            setLocating(false);
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        // Kamida joylashuv yoki matn bo'lishi kerak
-        if (!coords && !message.trim()) {
-            showToast("Joylashuvingizni yuboring yoki manzilni yozing", 'error');
+        if (!coords) {
+            showToast("Xaritada turgan joyingizni belgilang", 'error');
             return;
         }
         setIsLoading(true);
         try {
             await productService.createPassengerRequest({
-                from: coords ? '📍 Joylashuv yuborilgan' : (message.trim() || 'Belgilanmagan'),
-                to: message.trim() || '—',
+                from: '📍 Joylashuv (xaritada)',
+                to: destination.trim() || 'Belgilanmagan',
                 price,
-                fromLat: coords?.lat,
-                fromLng: coords?.lng,
+                fromLat: coords.lat,
+                fromLng: coords.lng,
             });
             const audio = new Audio('https://codeskulptor-demos.commondatastorage.googleapis.com/pang/pop.mp3');
             audio.volume = 0.5;
             audio.play().catch(() => {});
             setView('market');
-            showToast("So'rov haydovchilarga yuborildi! ✅", 'success');
+            showToast("Taksi chaqirildi! Haydovchilar ko'radi ✅", 'success');
         } finally {
             setIsLoading(false);
         }
@@ -120,57 +104,38 @@ export const PassengerRequestScreen = ({ view, setView, user, showToast, onSellC
                     <h1 className="font-black text-xl text-slate-900">Taksi chaqirish</h1>
                 </div>
 
-                <div className="p-4">
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-4 mb-5 flex items-start">
-                        <Megaphone className="text-yellow-600 mr-3 flex-shrink-0 mt-0.5" size={20} />
-                        <p className="text-yellow-800 text-sm font-medium leading-relaxed">Joylashuvingizni yuboring, haydovchilar sizni xaritada topib keladi.</p>
+                <form onSubmit={handleSubmit} className="p-4 space-y-4">
+                    {/* 1. XARITA (Yandex uslubi: markaz = turgan joy) */}
+                    <MapPicker onChange={setCoords} />
+
+                    {/* 2. Qayerga */}
+                    <div>
+                        <label className="block text-base font-bold text-slate-900 mb-2">🎯 Qayerga borasiz?</label>
+                        <input
+                            type="text"
+                            value={destination}
+                            onChange={e => setDestination(e.target.value)}
+                            placeholder="Masalan: Termiz, bozor"
+                            className="w-full px-4 py-4 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg transition-all"
+                        />
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* 1. KATTA joylashuv tugmasi (Telegram uslubi) */}
-                        <button
-                            type="button"
-                            onClick={handleGetLocation}
-                            disabled={locating}
-                            className={`w-full py-5 rounded-3xl font-bold text-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-sm ${coords ? 'bg-green-500 text-white shadow-green-200' : 'bg-blue-600 text-white shadow-blue-200'}`}
-                        >
-                            <MapPin size={26} />
-                            {locating ? 'Aniqlanmoqda...' : coords ? '✅ Joylashuv yuborildi' : 'Joylashuvni yuborish'}
-                        </button>
-                        {coords && (
-                            <a href={mapsLink(coords.lat, coords.lng)} target="_blank" rel="noopener noreferrer" className="block text-center text-blue-600 text-sm font-bold underline">
-                                Joylashuvni tekshirish
-                            </a>
-                        )}
+                    {/* 3. Narx (ixtiyoriy) */}
+                    <div className="relative">
+                        <input type="number" inputMode="numeric" value={price} onChange={e => setPrice(e.target.value)} placeholder="Narx taklifi (ixtiyoriy)" className="w-full px-4 py-4 pr-16 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg font-bold transition-all" />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">so'm</span>
+                    </div>
 
-                        {/* 2. Matn input (qayerga / izoh) */}
-                        <div className="bg-white border-2 border-slate-200 rounded-2xl p-2 flex items-end gap-2 focus-within:border-blue-500 transition-all">
-                            <textarea
-                                value={message}
-                                onChange={e => setMessage(e.target.value)}
-                                placeholder="Qayerga borasiz? Izoh yozing... (masalan: Termizga, 2 kishi)"
-                                rows={2}
-                                className="flex-1 px-2 py-2 outline-none resize-none text-base bg-transparent"
-                            />
-                        </div>
+                    {/* Telefon avtomatik */}
+                    <div className="bg-slate-100 rounded-2xl px-4 py-3 flex items-center gap-2">
+                        <span className="text-lg">📞</span>
+                        <p className="text-sm text-slate-600 font-medium">Raqamingiz: <b>{user.phone}</b></p>
+                    </div>
 
-                        {/* 3. Narx (ixtiyoriy) */}
-                        <div className="relative">
-                            <input type="number" inputMode="numeric" value={price} onChange={e => setPrice(e.target.value)} placeholder="Narx taklifi (ixtiyoriy)" className="w-full px-4 py-4 pr-16 bg-white border-2 border-slate-200 rounded-2xl focus:border-blue-500 outline-none text-lg font-bold transition-all" />
-                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">so'm</span>
-                        </div>
-
-                        {/* Telefon avtomatik */}
-                        <div className="bg-slate-100 rounded-2xl px-4 py-3 flex items-center gap-2">
-                            <span className="text-lg">📞</span>
-                            <p className="text-sm text-slate-600 font-medium">Raqamingiz avtomatik: <b>{user.phone}</b></p>
-                        </div>
-
-                        <button type="submit" disabled={isLoading} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-lg shadow-lg active:scale-95 transition-all disabled:opacity-60">
-                            {isLoading ? 'Yuborilmoqda...' : 'YUBORISH'}
-                        </button>
-                    </form>
-                </div>
+                    <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-lg shadow-lg shadow-blue-200 active:scale-95 transition-all disabled:opacity-60">
+                        {isLoading ? 'Yuborilmoqda...' : '🚕 TAKSI CHAQIRISH'}
+                    </button>
+                </form>
             </div>
             <BottomNav view={view} setView={setView} onSellClick={onSellClick} />
         </div>
