@@ -23,8 +23,8 @@ const webAppUrl = WEBAPP_URL || 'https://example.com';
 
 // Inline tugmalar: Bozorni ochish + Taxi (xabar ostida turadi)
 const mainInlineKeyboard = Markup.inlineKeyboard([
-  [Markup.button.webApp('🛒 Bozorni ochish', `${webAppUrl}/?screen=market`)],
   [Markup.button.webApp('🚖 Taxi', `${webAppUrl}/?screen=taxi`)],
+  [Markup.button.webApp('🛒 Bozorni ochish', `${webAppUrl}/?screen=market`)],
 ]);
 
 // Telefon so'rash uchun (Telegram qoidasi: contact faqat reply keyboard bilan)

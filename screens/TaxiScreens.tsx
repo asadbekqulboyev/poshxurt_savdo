@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { TruckIcon, ChevronLeft, Navigation, ChevronRight, MapPin, Bell, Clock, Phone } from 'lucide-react';
+import { TruckIcon, ChevronLeft, Navigation, ChevronRight, MapPin, Bell, Clock, Phone, Map } from 'lucide-react';
 import { ViewState, PassengerRequest, User } from '../types';
 import { BottomNav } from '../components/BottomNav';
 import { MapPicker } from '../components/MapPicker';
+import { DriverLocationMap } from '../components/DriverLocationMap';
 import { productService } from '../services/supabaseService';
 import { mapsLink } from '../services/location';
 
@@ -145,10 +146,28 @@ export const PassengerRequestScreen = ({ view, setView, user, showToast, onSellC
 // --- Driver Feed Screen ---
 export const DriverFeedScreen = ({ view, setView, onSellClick, onTaxiAdCreate }: { view: ViewState, setView: (v: ViewState) => void, onSellClick: () => void, onTaxiAdCreate: () => void }) => {
     const [requests, setRequests] = useState<PassengerRequest[]>([]);
+    // Har bir buyurtma uchun xarita ko'rinishini alohida boshqarish
+    const [visibleMaps, setVisibleMaps] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
         productService.getPassengerRequests().then(setRequests);
     }, []);
+
+    const toggleMap = (id: string) => {
+        setVisibleMaps(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
+    // Telefon qilish — avval xaritani ochib, keyin qo'ng'iroq
+    const handleCall = (req: PassengerRequest) => {
+        // Agar joylashuv bor bo'lsa, xaritani ko'rsatamiz
+        if (req.fromLat && req.fromLng) {
+            setVisibleMaps(prev => ({ ...prev, [req.id]: true }));
+        }
+        // Kichik delay bilan qo'ng'iroqni boshlaymiz (xarita ko'rinib turishi uchun)
+        setTimeout(() => {
+            window.location.href = `tel:${req.phone.replace(/\s/g, '')}`;
+        }, 300);
+    };
 
     return (
         <div className="min-h-screen bg-slate-100 flex flex-col pb-24">
@@ -169,32 +188,79 @@ export const DriverFeedScreen = ({ view, setView, onSellClick, onTaxiAdCreate }:
                         </div>
                     ) : (
                         requests.map(req => (
-                            <div key={req.id} className="bg-white rounded-3xl p-5 shadow-sm border border-slate-200">
-                                <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                            <div key={req.id} className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                                {/* Sarlavha: Yangi badge + vaqt */}
+                                <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
                                     <div className="flex items-center text-red-500 bg-red-50 px-3 py-1.5 rounded-lg"><Bell size={14} className="fill-red-500 mr-1.5" /><span className="text-xs font-bold">Yangi</span></div>
                                     <div className="flex items-center text-slate-400 text-sm font-medium"><Clock size={14} className="mr-1" />{new Date(req.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
                                 </div>
 
-                                {/* Yo'lovchi xabari */}
-                                {req.to && req.to !== '—' && (
-                                    <div className="flex items-start gap-2 mb-4">
-                                        <span className="text-xl flex-shrink-0">💬</span>
-                                        <p className="text-slate-900 font-bold text-lg leading-snug">{req.to}</p>
-                                    </div>
-                                )}
+                                <div className="px-5 py-4 space-y-3">
+                                    {/* Yo'lovchi xabari */}
+                                    {req.to && req.to !== '—' && (
+                                        <div className="flex items-start gap-2">
+                                            <span className="text-xl flex-shrink-0">💬</span>
+                                            <p className="text-slate-900 font-bold text-lg leading-snug">{req.to}</p>
+                                        </div>
+                                    )}
 
-                                <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl mb-3 border border-slate-100">
-                                    <span className="text-slate-500 text-sm font-bold">Narx:</span>
-                                    <span className="text-blue-600 font-black text-xl">{req.price ? new Intl.NumberFormat('uz-UZ').format(Number(req.price)) + " so'm" : "Kelishilgan"}</span>
+                                    {/* Narx */}
+                                    <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                                        <span className="text-slate-500 text-sm font-bold">Narx:</span>
+                                        <span className="text-blue-600 font-black text-xl">{req.price ? new Intl.NumberFormat('uz-UZ').format(Number(req.price)) + " so'm" : "Kelishilgan"}</span>
+                                    </div>
+
+                                    {/* Xarita ko'rsatish / yashirish tugmasi */}
+                                    {req.fromLat && req.fromLng && (
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleMap(req.id)}
+                                            className={`w-full py-3.5 rounded-2xl font-bold text-base flex items-center justify-center transition-all active:scale-[0.98] border-2 ${
+                                                visibleMaps[req.id]
+                                                    ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                                            }`}
+                                        >
+                                            <Map size={20} className="mr-2" />
+                                            {visibleMaps[req.id] ? '🗺️ Xaritani yashirish' : '🚕 Joylashuvni xaritada ko\'rish'}
+                                        </button>
+                                    )}
+
+                                    {/* INLINE XARITA — mashincha belgisi bilan */}
+                                    {req.fromLat && req.fromLng && visibleMaps[req.id] && (
+                                        <div className="animate-fadeIn">
+                                            <DriverLocationMap
+                                                lat={req.fromLat}
+                                                lng={req.fromLng}
+                                                label={req.to && req.to !== '—' ? `${req.to} ga ketmoqchi` : "Yo'lovchi shu yerda"}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                                {req.fromLat && req.fromLng && (
-                                    <a href={mapsLink(req.fromLat, req.fromLng)} target="_blank" rel="noopener noreferrer" className="w-full bg-blue-50 text-blue-700 py-4 rounded-2xl font-bold text-base flex items-center justify-center mb-2 active:scale-[0.98] transition-all border-2 border-blue-200">
-                                        <MapPin size={20} className="mr-2" />📍 Yo'lovchi joylashuvi (xaritada)
-                                    </a>
-                                )}
-                                <a href={`tel:${req.phone.replace(/\s/g, '')}`} className="w-full bg-green-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center active:scale-[0.98] transition-all shadow-lg shadow-green-200">
-                                    <Phone size={22} className="mr-2 fill-white" />Qo'ng'iroq qilish
-                                </a>
+
+                                {/* Qo'ng'iroq tugmasi */}
+                                <div className="px-5 pb-5 pt-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCall(req)}
+                                        className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center active:scale-[0.98] transition-all shadow-lg shadow-green-200 relative overflow-hidden group"
+                                    >
+                                        {/* Shimmer effect */}
+                                        <div className="absolute inset-0 -translate-x-full group-active:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+                                        <Phone size={22} className="mr-2 fill-white relative z-10" />
+                                        <span className="relative z-10">📞 Qo'ng'iroq qilish</span>
+                                        {req.fromLat && req.fromLng && (
+                                            <span className="ml-2 bg-white/20 px-2 py-0.5 rounded-lg text-xs font-bold relative z-10">
+                                                + 📍
+                                            </span>
+                                        )}
+                                    </button>
+                                    {req.fromLat && req.fromLng && (
+                                        <p className="text-center text-xs text-slate-400 mt-2 font-medium">
+                                            Qo'ng'iroq qilganingizda joylashuv avtomatik ko'rinadi
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         ))
                     )}
